@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>🥊 Tinju Komputer - Siswa vs Komputer</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', sans-serif; }
+  body {
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+    min-height: 100vh; color: #fff; overflow-x: hidden;
+  }
+  .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+  h1 { text-align:center; color:#ffd700; text-shadow: 2px 2px 4px #000; margin-bottom:10px; font-size: 2.2em;}
+  .subtitle { text-align:center; color:#ccc; margin-bottom:20px; }
+
+  /* Arena Ring */
+  .ring {
+    background: linear-gradient(180deg, #8b0000 0%, #b22222 50%, #8b0000 100%);
+    border: 8px solid #ffd700;
+    border-radius: 20px;
+    padding: 30px 20px;
+    position: relative;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6), inset 0 0 50px rgba(0,0,0,0.3);
+    margin-bottom: 20px;
+  }
+  .ring::before, .ring::after {
+    content:''; position:absolute; left:0; right:0; height:4px; background:#ffd700;
+  }
+  .ring::before { top: 30%; }
+  .ring::after { top: 70%; }
+
+  /* Health Bar */
+  .health-section { display:flex; justify-content:space-between; margin-bottom:30px; gap:20px;}
+  .health-box { flex:1; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; border: 2px solid #ffd700;}
+  .health-box.right { text-align:right; }
+  .health-label { font-weight:bold; margin-bottom:5px; font-size: 1.1em;}
+  .health-bar {
+    width:100%; height:25px; background:#333; border-radius:12px; overflow:hidden;
+    border: 2px solid #fff;
+  }
+  .health-fill {
+    height:100%; transition: width 0.5s ease;
+    background: linear-gradient(90deg, #00ff00, #7fff00);
+  }
+  .health-fill.low { background: linear-gradient(90deg, #ff4500, #ff6347); }
+
+  /* Fighters */
+  .fighters {
+    display:flex; justify-content:space-around; align-items:flex-end;
+    min-height: 250px; position:relative; z-index:2;
+  }
+  .fighter {
+    text-align:center; transition: transform 0.3s ease;
+    position:relative;
+  }
+  .fighter-body {
+    width: 130px; height: 180px; position:relative;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  .fighter-head {
+    width: 70px; height: 70px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size: 3em; border: 3px solid #000;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+  }
+  .siswa .fighter-head { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+  .komputer .fighter-head { background: linear-gradient(135deg, #434343, #000000); }
+  .fighter-torso {
+    width: 80px; height: 70px; margin-top:-5px;
+    border-radius: 10px 10px 5px 5px;
+    display:flex; align-items:center; justify-content:center;
+    font-size: 1.5em; font-weight:bold; color:#fff;
+    border: 3px solid #000;
+  }
+  .siswa .fighter-torso { background: linear-gradient(135deg, #ff6b6b, #ee5a6f); }
+  .komputer .fighter-torso { background: linear-gradient(135deg, #667eea, #764ba2); }
+  .fighter-arm {
+    position:absolute; top: 85px; width: 30px; height: 60px;
+    background: linear-gradient(135deg, #ffb88c, #ff9a76);
+    border: 2px solid #000; border-radius: 10px;
+  }
+  .siswa .fighter-arm { right: -15px; transform-origin: top center; }
+  .komputer .fighter-arm { left: -15px; transform-origin: top center; }
+  .fighter-name {
+    margin-top: 10px; font-size: 1.3em; font-weight:bold;
+    text-shadow: 2px 2px 4px #000;
+    background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px;
+  }
+
+  /* Animasi Pukulan */
+  .siswa.punch { animation: punchRight 0.5s ease; }
+  .komputer.punch { animation: punchLeft 0.5s ease; }
+  .siswa.hit { animation: hitLeft 0.5s ease; }
+  .komputer.hit { animation: hitRight 0.5s ease; }
+
+  @keyframes punchRight {
+    0% { transform: translateX(0); }
+    50% { transform: translateX(100px) scale(1.1); }
+    100% { transform: translateX(0); }
+  }
+  @keyframes punchLeft {
+    0% { transform: translateX(0); }
+    50% { transform: translateX(-100px) scale(1.1); }
+    100% { transform: translateX(0); }
+  }
+  @keyframes hitLeft {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-20px) rotate(-5deg); }
+    75% { transform: translateX(10px) rotate(5deg); }
+  }
+  @keyframes hitRight {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(20px) rotate(5deg); }
+    75% { transform: translateX(-10px) rotate(-5deg); }
+  }
+
+  /* Efek Pukulan */
+  .punch-effect {
+    position:absolute; font-size: 4em;
+    animation: popEffect 0.6s ease forwards;
+    pointer-events:none; z-index: 10;
+  }
+  @keyframes popEffect {
+    0% { opacity:0; transform: scale(0.3); }
+    50% { opacity:1; transform: scale(1.3); }
+    100% { opacity:0; transform: scale(1.5) translateY(-30px); }
+  }
+
+  /* Question Box */
+  .question-box {
+    background: rgba(0,0,0,0.7); border: 3px solid #ffd700;
+    border-radius: 15px; padding: 20px; margin-top: 20px;
+  }
+  .question-header {
+    display:flex; justify-content:space-between; margin-bottom:15px;
+    font-size: 1.1em; color: #ffd700;
+  }
+  .question-text {
+    font-size: 1.2em; margin-bottom: 20px; line-height: 1.5;
+    background: rgba(255,215,0,0.1); padding: 15px; border-radius: 10px;
+    border-left: 5px solid #ffd700;
+  }
+  .options { display:grid; grid-template-columns: 1fr 1fr; gap: 10px;}
+  .option {
+    background: linear-gradient(135deg, #2c3e50, #34495e);
+    border: 2px solid #ffd700; color:#fff;
+    padding: 15px; border-radius: 10px; cursor: pointer;
+    font-size: 1em; transition: all 0.3s; text-align:left;
+  }
+  .option:hover:not(:disabled) {
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    color: #000; transform: translateY(-2px);
+  }
+  .option:disabled { cursor: not-allowed; opacity: 0.7;}
+  .option.correct { background: linear-gradient(135deg, #00b09b, #96c93d)!important; color:#fff;}
+  .option.wrong { background: linear-gradient(135deg, #cb2d3e, #ef473a)!important; color:#fff;}
+
+  .feedback {
+    margin-top: 15px; padding: 15px; border-radius: 10px;
+    font-size: 1.1em; text-align:center; font-weight:bold;
+    display:none;
+  }
+  .feedback.show { display:block; animation: fadeIn 0.3s; }
+  .feedback.correct { background: rgba(0,176,155,0.3); border: 2px solid #00b09b;}
+  .feedback.wrong { background: rgba(203,45,62,0.3); border: 2px solid #cb2d3e;}
+
+  @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
+
+  /* Result Screen */
+  .result-screen {
+    position:fixed; top:0; left:0; width:100%; height:100%;
+    background: rgba(0,0,0,0.9); display:none;
+    justify-content:center; align-items:center; z-index:100;
+    flex-direction:column;
+  }
+  .result-screen.show { display:flex; animation: fadeIn 0.5s;}
+  .result-title {
+    font-size: 4em; margin-bottom: 20px;
+    text-shadow: 3px 3px 6px #000;
+  }
+  .result-title.win { color: #ffd700; }
+  .result-title.lose { color: #ff4500; }
+  .result-message { font-size: 1.5em; margin-bottom: 30px; text-align:center; padding: 0 20px;}
+  .btn-restart {
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    color:#000; padding: 15px 40px; font-size: 1.2em;
+    border:none; border-radius: 30px; cursor:pointer; font-weight:bold;
+    box-shadow: 0 5px 15px rgba(255,215,0,0.4);
+    transition: transform 0.2s;
+  }
+  .btn-restart:hover { transform: scale(1.05);}
+
+  .start-screen {
+    position:fixed; top:0; left:0; width:100%; height:100%;
+    background: rgba(0,0,0,0.95); display:flex;
+    justify-content:center; align-items:center; z-index:100;
+    flex-direction:column; text-align:center; padding: 20px;
+  }
+  .start-screen h2 { color:#ffd700; font-size: 2.5em; margin-bottom: 20px;}
+  .start-screen p { font-size: 1.1em; margin-bottom: 15px; max-width: 600px; line-height: 1.6;}
+  .rules { background: rgba(255,215,0,0.1); padding: 20px; border-radius: 15px; margin: 20px 0; text-align:left; max-width: 600px;}
+  .rules li { margin: 10px 0; line-height: 1.5;}
+
+  @media (max-width: 600px) {
+    .options { grid-template-columns: 1fr; }
+    .fighter-body { width: 100px; height: 140px;}
+    .fighter-head { width: 55px; height: 55px; font-size: 2.2em;}
+    .fighter-torso { width: 65px; height: 55px; font-size: 1.2em;}
+    .result-title { font-size: 2.5em;}
+  }
+</style>
+</head>
+<body>
+
+<!-- START SCREEN -->
+<div class="start-screen" id="startScreen">
+  <h2>🥊 TINJU KOMPUTER 🥊</h2>
+  <p><strong>Siswa vs Komputer</strong></p>
+  <p>Adu pengetahuan komponen komputer dalam pertandingan tinju edukatif!</p>
+  <div class="rules">
+    <strong>📜 Aturan Pertandingan:</strong>
+    <ul>
+      <li>🎯 Kamu adalah <strong>Petinju Kiri (Siswa)</strong></li>
+      <li>🤖 Lawanmu adalah <strong>Petinju Kanan (Komputer)</strong></li>
+      <li>✅ Jawaban <strong>BENAR</strong> = Kamu memukul Komputer (darahnya berkurang)</li>
+      <li>❌ Jawaban <strong>SALAH</strong> = Komputer memukul Kamu (darahmu berkurang)</li>
+      <li>🏆 Habiskan darah komputer atau jawab semua benar untuk MENANG!</li>
+    </ul>
+  </div>
+  <button class="btn-restart" onclick="startGame()">🥊 MULAI PERTANDINGAN</button>
+</div>
+
+<div class="container">
+  <h1>🥊 TINJU KOMPUTER</h1>
+  <p class="subtitle">Siswa vs Komputer - SMK Kelas 10</p>
+
+  <!-- Ring -->
+  <div class="ring">
+    <!-- Health Bar -->
+    <div class="health-section">
+      <div class="health-box">
+        <div class="health-label">👦 SISWA</div>
+        <div class="health-bar"><div class="health-fill" id="siswaHP" style="width:100%"></div></div>
+      </div>
+      <div class="health-box right">
+        <div class="health-label">🤖 KOMPUTER</div>
+        <div class="health-bar"><div class="health-fill" id="komputerHP" style="width:100%"></div></div>
+      </div>
+    </div>
+
+    <!-- Fighters -->
+    <div class="fighters">
+      <div class="fighter siswa" id="siswa">
+        <div class="fighter-body">
+          <div class="fighter-head">😎</div>
+          <div class="fighter-torso">SISWA</div>
+          <div class="fighter-arm"></div>
+        </div>
+        <div class="fighter-name">👦 SISWA</div>
+      </div>
+
+      <div class="fighter komputer" id="komputer">
+        <div class="fighter-body">
+          <div class="fighter-head">🤖</div>
+          <div class="fighter-torso">PC</div>
+          <div class="fighter-arm"></div>
+        </div>
+        <div class="fighter-name">🤖 KOMPUTER</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Question Box -->
+  <div class="question-box">
+    <div class="question-header">
+      <span>📝 Soal: <span id="qNumber">1</span>/10</span>
+      <span>✅ Benar: <span id="score">0</span></span>
+    </div>
+    <div class="question-text" id="questionText">Memuat soal...</div>
+    <div class="options" id="options"></div>
+    <div class="feedback" id="feedback"></div>
+  </div>
+</div>
+
+<!-- Result Screen -->
+<div class="result-screen" id="resultScreen">
+  <div class="result-title" id="resultTitle">🏆 KAMU MENANG!</div>
+  <div class="result-message" id="resultMessage">Selamat!</div>
+  <button class="btn-restart" onclick="restartGame()">🔄 MAIN LAGI</button>
+</div>
+
+<script>
+  // Database Soal
+  const questions = [
+    {
+      q: "Apa fungsi utama dari CPU (Central Processing Unit)?",
+      options: ["Menyimpan data permanen", "Otak komputer yang memproses data", "Menampilkan gambar di monitor", "Menghubungkan ke internet"],
+      answer: 1
+    },
+    {
+      q: "Komponen yang berfungsi menyimpan data sementara saat komputer menyala adalah...",
+      options: ["Harddisk", "ROM", "RAM", "SSD"],
+      answer: 2
+    },
+    {
+      q: "Papan sirkuit utama yang menghubungkan semua komponen komputer disebut...",
+      options: ["VGA Card", "Motherboard", "Power Supply", "Processor"],
+      answer: 1
+    },
+    {
+      q: "Komponen yang bertugas mengubah arus listrik AC menjadi DC untuk komputer adalah...",
+      options: ["PSU (Power Supply Unit)", "CPU", "RAM", "Cooling Fan"],
+      answer: 0
+    },
+    {
+      q: "Kartu yang berfungsi mengolah grafis untuk ditampilkan di monitor adalah...",
+      options: ["Sound Card", "Network Card", "VGA/GPU Card", "RAM"],
+      answer: 2
+    },
+    {
+      q: "Media penyimpanan data permanen yang menggunakan piringan magnetik adalah...",
+      options: ["RAM", "Harddisk (HDD)", "Flashdisk", "Cache"],
+      answer: 1
+    },
+    {
+      q: "Apa fungsi dari kipas pendingin (cooling fan) pada komputer?",
+      options: ["Mempercepat proses data", "Menyimpan data", "Mendinginkan komponen agar tidak overheat", "Menghasilkan suara"],
+      answer: 2
+    },
+    {
+      q: "Perangkat input yang digunakan untuk mengetik adalah...",
+      options: ["Monitor", "Printer", "Keyboard", "Speaker"],
+      answer: 2
+    },
+    {
+      q: "ROM (Read Only Memory) memiliki sifat...",
+      options: ["Data bisa diubah-ubah", "Data hilang saat mati", "Data hanya bisa dibaca dan tidak hilang saat mati", "Menyimpan data sementara"],
+      answer: 2
+    },
+    {
+      q: "Komponen yang berfungsi sebagai perangkat output untuk menampilkan visual adalah...",
+      options: ["Keyboard", "Mouse", "Monitor", "Scanner"],
+      answer: 2
+    }
+  ];
+
+  let currentQ = 0;
+  let score = 0;
+  let siswaHP = 100;
+  let komputerHP = 100;
+  let locked = false;
+
+  function startGame() {
+    document.getElementById('startScreen').style.display = 'none';
+    loadQuestion();
+  }
+
+  function loadQuestion() {
+    if (currentQ >= questions.length || siswaHP <= 0 || komputerHP <= 0) {
+      endGame();
+      return;
+    }
+    const q = questions[currentQ];
+    document.getElementById('qNumber').textContent = currentQ + 1;
+    document.getElementById('questionText').textContent = q.q;
+    document.getElementById('feedback').classList.remove('show');
+    document.getElementById('feedback').classList.remove('correct', 'wrong');
+
+    const optionsDiv = document.getElementById('options');
+    optionsDiv.innerHTML = '';
+    q.options.forEach((opt, idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'option';
+      btn.textContent = String.fromCharCode(65 + idx) + '. ' + opt;
+      btn.onclick = () => selectAnswer(idx, btn);
+      optionsDiv.appendChild(btn);
+    });
+    locked = false;
+  }
+
+  function selectAnswer(idx, btn) {
+    if (locked) return;
+    locked = true;
+    const q = questions[currentQ];
+    const allBtns = document.querySelectorAll('.option');
+    allBtns.forEach(b => b.disabled = true);
+
+    const feedback = document.getElementById('feedback');
+
+    if (idx === q.answer) {
+      // Jawaban BENAR - Siswa memukul Komputer
+      btn.classList.add('correct');
+      score++;
+      document.getElementById('score').textContent = score;
+      komputerHP = Math.max(0, komputerHP - 15);
+      updateHP();
+
+      // Animasi siswa memukul
+      document.getElementById('siswa').classList.add('punch');
+      setTimeout(() => {
+        document.getElementById('komputer').classList.add('hit');
+        showPunchEffect('komputer', '💥');
+      }, 250);
+
+      feedback.textContent = '✅ BENAR! Kamu memukul Komputer! 💥';
+      feedback.classList.add('correct', 'show');
+
+      setTimeout(() => {
+        document.getElementById('siswa').classList.remove('punch');
+        document.getElementById('komputer').classList.remove('hit');
+      }, 800);
+
+    } else {
+      // Jawaban SALAH - Komputer memukul Siswa
+      btn.classList.add('wrong');
+      allBtns[q.answer].classList.add('correct');
+      siswaHP = Math.max(0, siswaHP - 15);
+      updateHP();
+
+      // Animasi komputer memukul
+      document.getElementById('komputer').classList.add('punch');
+      setTimeout(() => {
+        document.getElementById('siswa').classList.add('hit');
+        showPunchEffect('siswa', '💢');
+      }, 250);
+
+      feedback.textContent = '❌ SALAH! Komputer memukulmu! Jawaban benar: ' + q.options[q.answer];
+      feedback.classList.add('wrong', 'show');
+
+      setTimeout(() => {
+        document.getElementById('komputer').classList.remove('punch');
+        document.getElementById('siswa').classList.remove('hit');
+      }, 800);
+    }
+
+    currentQ++;
+    setTimeout(loadQuestion, 2500);
+  }
+
+  function showPunchEffect(target, emoji) {
+    const targetEl = document.getElementById(target);
+    const effect = document.createElement('div');
+    effect.className = 'punch-effect';
+    effect.textContent = emoji;
+    effect.style.left = '50%';
+    effect.style.top = '30%';
+    effect.style.transform = 'translateX(-50%)';
+    targetEl.appendChild(effect);
+    setTimeout(() => effect.remove(), 600);
+  }
+
+  function updateHP() {
+    const siswaBar = document.getElementById('siswaHP');
+    const komputerBar = document.getElementById('komputerHP');
+    siswaBar.style.width = siswaHP + '%';
+    komputerBar.style.width = komputerHP + '%';
+    if (siswaHP < 40) siswaBar.classList.add('low'); else siswaBar.classList.remove('low');
+    if (komputerHP < 40) komputerBar.classList.add('low'); else komputerBar.classList.remove('low');
+  }
+
+  function endGame() {
+    const resultScreen = document.getElementById('resultScreen');
+    const title = document.getElementById('resultTitle');
+    const msg = document.getElementById('resultMessage');
+
+    if (komputerHP <= 0 || score === questions.length) {
+      title.textContent = '🏆 KAMU MENANG!';
+      title.className = 'result-title win';
+      msg.innerHTML = `Selamat! Kamu berhasil mengalahkan Komputer!<br>
+                       Skor: <strong>${score}/${questions.length}</strong><br>
+                       Kamu menguasai materi komponen komputer dengan baik! 🎉`;
+    } else if (siswaHP <= 0) {
+      title.textContent = '💀 KAMU KALAH!';
+      title.className = 'result-title lose';
+      msg.innerHTML = `Komputer menang KO! 😵<br>
+                       Skor: <strong>${score}/${questions.length}</strong><br>
+                       Pelajari lagi materi komponen komputer ya! 📚`;
+    } else {
+      if (score >= 7) {
+        title.textContent = '🥈 HAMPIR MENANG!';
+        title.className = 'result-title win';
+        msg.innerHTML = `Pertandingan berakhir!<br>Skor: <strong>${score}/${questions.length}</strong><br>Bagus, tapi masih bisa lebih baik!`;
+      } else {
+        title.textContent = '📚 BELAJAR LAGI!';
+        title.className = 'result-title lose';
+        msg.innerHTML = `Pertandingan berakhir!<br>Skor: <strong>${score}/${questions.length}</strong><br>Yuk pelajari lagi komponen komputer!`;
+      }
+    }
+    resultScreen.classList.add('show');
+  }
+
+  function restartGame() {
+    currentQ = 0;
+    score = 0;
+    siswaHP = 100;
+    komputerHP = 100;
+    document.getElementById('score').textContent = 0;
+    updateHP();
+    document.getElementById('resultScreen').classList.remove('show');
+    loadQuestion();
+  }
+</script>
+</body>
+</html>
