@@ -1,0 +1,65 @@
+// Data Komponen
+const components = {
+    ram_ddr4: { id: 'ram_ddr4', name: 'RAM DDR4', type: 'DDR4' },
+    mobo_ddr4: { id: 'mobo_ddr4', name: 'Motherboard DDR4', slotType: 'DDR4' },
+    ram_ddr3: { id: 'ram_ddr3', name: 'RAM DDR3', type: 'DDR3' }
+};
+
+let currentScore = 100;
+
+// Fungsi saat komponen (RAM) mulai diseret
+function dragStart(event) {
+    // Simpan ID komponen yang sedang diseret
+    event.dataTransfer.setData('text/plain', event.target.id);
+    event.target.style.opacity = '0.5'; // Efek visual
+}
+
+// Fungsi saat komponen masuk ke area drop (Slot Motherboard)
+function dragOver(event) {
+    event.preventDefault(); // Wajib ada agar drop bisa diterima
+}
+
+// Fungsi saat komponen dilepaskan di area drop
+function drop(event) {
+    event.preventDefault();
+    const draggedItemId = event.dataTransfer.getData('text/plain');
+    const dropZone = event.target;
+    
+    const draggedItem = components[draggedItemId];
+    const dropZoneType = dropZone.dataset.slotType; // Misal: "DDR4"
+
+    // Logika Pencocokan (Kompatibilitas)
+    if (draggedItem.type === dropZoneType) {
+        // BENAR: Komponen cocok
+        dropZone.appendChild(document.getElementById(draggedItemId));
+        showFeedback("Sukses! RAM DDR4 berhasil dipasang dengan bunyi 'KLIK'.", "success");
+        currentScore += 10;
+    } else {
+        // SALAH: Komponen tidak cocok (misal DDR3 dipaksa ke slot DDR4)
+        showFeedback(`Gagal! ${draggedItem.name} tidak kompatibel dengan slot ${dropZoneType}. Periksa kembali notch (celah) pada kaki RAM!`, "error");
+        
+        // Sistem Feedback Bertingkat (Pengurangan Skor)
+        currentScore -= 5; 
+        if(currentScore < 0) currentScore = 0;
+    }
+    
+    updateScoreUI();
+}
+
+// Fungsi UI Feedback (Simulasi)
+function showFeedback(message, type) {
+    const feedbackBox = document.getElementById('detective-notebook');
+    feedbackBox.innerText = message;
+    feedbackBox.className = type; // 'success' (hijau) atau 'error' (merah)
+}
+
+function updateScoreUI() {
+    document.getElementById('score-display').innerText = `Detective Points: ${currentScore}`;
+}
+
+// Inisialisasi Event Listener (Disesuaikan dengan HTML)
+// document.querySelectorAll('.draggable-ram').forEach(item => item.addEventListener('dragstart', dragStart));
+// document.querySelectorAll('.mobo-slot').forEach(zone => {
+//     zone.addEventListener('dragover', dragOver);
+//     zone.addEventListener('drop', drop);
+// });
